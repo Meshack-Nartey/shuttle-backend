@@ -3,7 +3,7 @@ spring:
     name: store
 
   datasource:
-    url: jdbc:mysql://localhost:3306/shuttle-backend?createDatabaseIfNotExist=true
+    url: jdbc:mysql://localhost:3306/shuttle_backend_new?createDatabaseIfNotExist=true
     username: root
     password: 1Science,3
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -12,11 +12,20 @@ spring:
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
+    open-in-view: false
 
   flyway:
-    enabled: true
+    enabled: false
     locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  thymeleaf:
+    check-template-location: false
+
+  jwt:
+    secret: "A92F3C19A8E6D1F7B92744AEE1C5A3C0D998DAB12399F567B8C9D01A44EE9A34"
+    expiration: 3600000   # 1 hour in ms
+
