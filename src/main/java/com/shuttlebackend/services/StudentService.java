@@ -30,9 +30,22 @@ public class StudentService {
         }
         // create user account
         User user = userService.createUser(dto.getEmail(), dto.getPassword(), "ROLE_STUDENT");
-        var school = schoolRepo.findById(dto.getSchoolId()).orElseThrow(() -> new RuntimeException("School not found"));
+        // resolve school by external id (string) first, then fallback to numeric id if the frontend supplied a numeric id string
+        var school = schoolRepo.findByExternalId(dto.getSchoolId())
+                .or(() -> {
+                    try {
+                        Integer id = Integer.parseInt(dto.getSchoolId());
+                        return schoolRepo.findById(id);
+                    } catch (NumberFormatException nfe) {
+                        return Optional.empty();
+                    }
+                })
+                .orElseThrow(() -> new RuntimeException("School not found"));
         Student student = studentMapper.toEntity(dto);
         student.setUser(user);
+        if (dto.getUsername() != null && !dto.getUsername().isBlank()) {
+            student.setUsername(dto.getUsername());
+        }
         student.setSchool(school);
         return studentRepo.save(student);
     }

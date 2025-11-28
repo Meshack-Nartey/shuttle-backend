@@ -34,10 +34,18 @@ public class DriverService {
         driver.setUser(user);
         driver.setFirstName(dto.getFirstName());
         driver.setLastName(dto.getLastName());
-        driver.setSchool(
-                schoolRepo.findById(dto.getSchoolId().intValue())
-                        .orElseThrow(() -> new RuntimeException("School not found"))
-        );
+        // resolve school by external id (string) first, then fallback to numeric id
+        var school = schoolRepo.findByExternalId(dto.getSchoolId())
+                .or(() -> {
+                    try {
+                        Integer id = Integer.parseInt(dto.getSchoolId());
+                        return schoolRepo.findById(id);
+                    } catch (NumberFormatException nfe) {
+                        return Optional.empty();
+                    }
+                })
+                .orElseThrow(() -> new RuntimeException("School not found"));
+        driver.setSchool(school);
 
         return driverRepo.save(driver);
     }

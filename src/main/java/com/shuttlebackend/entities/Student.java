@@ -41,6 +41,10 @@ public class Student {
     @Column(name = "last_name", nullable = false, length = 50)
     private String lastName;
 
+    @Size(max = 50)
+    @Column(name = "username", length = 50)
+    private String username;
+
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "school_id", nullable = false)
