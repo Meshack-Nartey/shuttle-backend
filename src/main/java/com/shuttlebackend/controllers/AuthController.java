@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import java.time.Instant;
 import java.util.Arrays;
 
 @RestController
@@ -42,7 +41,7 @@ public class AuthController {
     private final UserMapper userMapper;
 
     private final JwtHelper jwtHelper;
-    private final BlacklistedTokenService blacklistedTokenService;
+
 
     // STUDENT SIGNUP
     @PostMapping("/signup/student")
@@ -154,21 +153,11 @@ public class AuthController {
         return ResponseEntity.ok(new ApiResponse<>(true, resp));
     }
 
-    // LOGOUT - stateless: just delete cookie + blacklist access token
+    // LOGOUT - stateless: just delete cookie (no blacklist)
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<?>> logout(
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader,
             HttpServletResponse response) {
-
-        // blacklist access token
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String access = authHeader.substring(7);
-            if (jwtHelper.validateToken(access) && "access".equals(jwtHelper.getType(access))) {
-                String accessJti = jwtHelper.getJti(access);
-                long expMs = jwtHelper.getExpirationMillis(access);
-                blacklistedTokenService.create(accessJti, Instant.ofEpochMilli(expMs));
-            }
-        }
 
         // clear cookie
         ResponseCookie clearCookie = ResponseCookie.from("refreshToken", "")

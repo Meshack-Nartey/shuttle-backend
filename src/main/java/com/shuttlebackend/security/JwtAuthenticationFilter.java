@@ -1,7 +1,6 @@
 package com.shuttlebackend.security;
 
 import com.shuttlebackend.services.UserService;
-import com.shuttlebackend.services.BlacklistedTokenService;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import lombok.AllArgsConstructor;
@@ -20,15 +19,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtHelper jwtHelper;
     private final UserService userService;
-    private final BlacklistedTokenService blacklistedTokenService;
-
 
     private String extractToken(HttpServletRequest request) {
         String bearer = request.getHeader("Authorization");
-
-        if (StringUtils.hasText(bearer) && bearer.startsWith("Bearer "))
+        if (StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")) {
             return bearer.substring(7);
-
+        }
         return null;
     }
 
@@ -36,17 +32,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse resp, FilterChain chain)
             throws ServletException, IOException {
 
+        // ✔ IMPORTANT: Skip WebSocket handshake endpoints
+        String path = req.getRequestURI();
+        if (path.startsWith("/ws") || path.startsWith("/ws-stomp")) {
+            chain.doFilter(req, resp);
+            return;
+        }
+
+        // Normal JWT validation for HTTP requests
         String token = extractToken(req);
 
         if (token != null && jwtHelper.validateToken(token) && "access".equals(jwtHelper.getType(token))) {
-            String jti = jwtHelper.getJti(token);
-
-            // check blacklist
-            if (blacklistedTokenService.findByJti(jti).isPresent()) {
-                // token has been blacklisted -- do not authenticate
-                chain.doFilter(req, resp);
-                return;
-            }
 
             String subject = jwtHelper.getSubject(token);
 

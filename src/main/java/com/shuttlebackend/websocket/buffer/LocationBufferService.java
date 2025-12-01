@@ -1,8 +1,12 @@
 package com.shuttlebackend.websocket.buffer;
 
 import com.shuttlebackend.dtos.LocationBroadcastDto;
+import com.shuttlebackend.dtos.StudentActiveShuttleDto;
 import com.shuttlebackend.entities.LocationUpdate;
+import com.shuttlebackend.entities.Shuttle;
 import com.shuttlebackend.repositories.LocationUpdateRepository;
+import com.shuttlebackend.repositories.ShuttleRepository;
+import com.shuttlebackend.repositories.DriverSessionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,6 +27,8 @@ import java.util.stream.Collectors;
 public class LocationBufferService {
 
     private final LocationUpdateRepository repo;
+    private final ShuttleRepository shuttleRepository;
+    private final DriverSessionRepository sessionRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
     // in-memory queue for incoming updates
@@ -68,6 +74,33 @@ public class LocationBufferService {
                     );
                     String topic = "/topic/shuttle/" + shuttleId + "/location";
                     messagingTemplate.convertAndSend(topic, payload);
+
+                    // Additionally publish student-facing active shuttle DTO for this shuttle's school
+                    try {
+                        Shuttle shuttle = shuttleRepository.findById(shuttleId).orElse(null);
+                        if (shuttle != null) {
+                            String routeName = null;
+                            var sessionOpt = sessionRepository.findActiveByShuttleId(shuttleId);
+                            if (sessionOpt.isPresent() && sessionOpt.get().getRoute() != null) {
+                                routeName = sessionOpt.get().getRoute().getRouteName();
+                            }
+
+                            StudentActiveShuttleDto studentDto = new StudentActiveShuttleDto(
+                                    shuttle.getExternalId() != null ? shuttle.getExternalId() : shuttle.getLicensePlate(),
+                                    latest.getLatitude() != null ? latest.getLatitude().doubleValue() : null,
+                                    latest.getLongitude() != null ? latest.getLongitude().doubleValue() : null,
+                                    routeName,
+                                    shuttle.getStatus(),
+                                    latest.getCreatedAt()
+                            );
+
+                            String schoolExternal = shuttle.getSchool() != null ? shuttle.getSchool().getExternalId() : "unknown";
+                            String studentTopic = "/topic/student/shuttles/" + schoolExternal;
+                            messagingTemplate.convertAndSend(studentTopic, List.of(studentDto));
+                        }
+                    } catch (Exception ex) {
+                        // don't fail flush if student publish fails
+                    }
                 });
             });
         }

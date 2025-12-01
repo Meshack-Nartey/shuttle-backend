@@ -30,29 +30,36 @@ public class WebSocketBrokerConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(org.springframework.messaging.simp.config.MessageBrokerRegistry config) {
-        // enable simple in-memory broker for topics and queues
         config.enableSimpleBroker("/topic", "/queue");
-        // prefix for messages bound for @MessageMapping handlers (if any)
         config.setApplicationDestinationPrefixes("/app");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // STOMP endpoint for clients (students) to connect via SockJS
-        registry.addEndpoint("/ws-stomp").setAllowedOrigins("*").withSockJS();
+        // 1. SockJS endpoint for browser/mobile clients
+        registry.addEndpoint("/ws-stomp")
+                .setAllowedOrigins("*")
+                .withSockJS();
+
+        // 2. Native WebSocket endpoint for Node.js / backend services
+        registry.addEndpoint("/ws")
+                .setAllowedOrigins("*");
     }
 
-    // Intercept inbound STOMP messages to validate CONNECT frame tokens
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
         registration.interceptors(new ChannelInterceptor() {
             @Override
             public Message<?> preSend(Message<?> message, MessageChannel channel) {
-                StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+                StompHeaderAccessor accessor =
+                        MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+
                 if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
-                    // try Authorization header first
+
+                    // Try Authorization header
                     List<String> authHeaders = accessor.getNativeHeader("Authorization");
                     String token = null;
+
                     if (authHeaders != null && !authHeaders.isEmpty()) {
                         token = authHeaders.get(0);
                         if (token != null && token.startsWith("Bearer ")) {
@@ -60,34 +67,39 @@ public class WebSocketBrokerConfig implements WebSocketMessageBrokerConfigurer {
                         }
                     }
 
-                    // fallback to access_token native header
-                    if ((token == null || token.isBlank()) && accessor.getFirstNativeHeader("access_token") != null) {
+                    // Fallback to access_token STOMP header
+                    if ((token == null || token.isBlank())
+                            && accessor.getFirstNativeHeader("access_token") != null) {
                         token = accessor.getFirstNativeHeader("access_token");
                     }
 
-                    // If no token provided, reject CONNECT
                     if (token == null || token.isBlank()) {
-                        return null; // reject connection
+                        return null; // No token -> reject connection
                     }
 
-                    // validate token and set principal; reject if invalid
                     try {
-                        if (jwtHelper.validateToken(token) && "access".equals(jwtHelper.getType(token))) {
+                        if (jwtHelper.validateToken(token)
+                                && "access".equals(jwtHelper.getType(token))) {
+
                             String email = jwtHelper.getSubject(token);
-                            Principal principal = new Principal() {
-                                @Override
-                                public String getName() { return email; }
-                            };
-                            Authentication auth = new UsernamePasswordAuthenticationToken(email, null, Collections.emptyList());
+
+                            Principal principal = () -> email;
+
+                            Authentication auth = new UsernamePasswordAuthenticationToken(
+                                    email, null, Collections.emptyList()
+                            );
+
                             accessor.setUser(principal);
                             SecurityContextHolder.getContext().setAuthentication(auth);
                         } else {
-                            return null; // invalid token -> reject connection
+                            return null; // Invalid token -> reject
                         }
+
                     } catch (Exception ex) {
-                        return null; // invalid token -> reject connection
+                        return null; // Token invalid -> reject
                     }
                 }
+
                 return message;
             }
         });

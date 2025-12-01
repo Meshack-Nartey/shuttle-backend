@@ -35,6 +35,9 @@ public class Shuttle {
     @Column(name = "status", length = 20)
     private String status;
 
+    @Column(name = "external_id", length = 100)
+    private String externalId;
+
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "school_id", nullable = false)
