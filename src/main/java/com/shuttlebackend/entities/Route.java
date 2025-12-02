@@ -1,5 +1,6 @@
 package com.shuttlebackend.entities;
 
+import com.shuttlebackend.persistence.PolylineJsonConverter;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -9,6 +10,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -38,5 +40,16 @@ public class Route {
 
     @OneToMany(mappedBy = "route")
     private Set<RouteStop> routeStops = new LinkedHashSet<>();
+
+    // typed JSON representation of forward/backward polylines: list of [lat, lon]
+    @Lob
+    @Column(name = "polyline_forward", columnDefinition = "JSON")
+    @Convert(converter = PolylineJsonConverter.class)
+    private List<List<Double>> polylineForward;
+
+    @Lob
+    @Column(name = "polyline_backward", columnDefinition = "JSON")
+    @Convert(converter = PolylineJsonConverter.class)
+    private List<List<Double>> polylineBackward;
 
 }

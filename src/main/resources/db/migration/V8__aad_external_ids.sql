@@ -1,1 +1,0 @@
-ALTER TABLE route ADD COLUMN external_id VARCHAR(50) UNIQUE;

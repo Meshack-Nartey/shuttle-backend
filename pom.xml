@@ -168,6 +168,23 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+
+            <!-- Flyway Maven plugin (adds mvn flyway:{info,migrate,...}) -->
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <configuration>
+                    <!-- supply via -Dflyway.url / -Dflyway.user / -Dflyway.password when running locally -->
+                    <url>jdbc:mysql://localhost:3306/shuttle_backend_new</url>
+                    <user>root</user>
+                    <password>1Science,3</password>
+                    <cleanDisabled>false</cleanDisabled>
+                    <!-- points to project's migration folder -->
+                    <locations>filesystem:src/main/resources/db/migration</locations>
+                    <schemas>shuttle_backend_new</schemas>
+                </configuration>
+            </plugin>
+
         </plugins>
     </build>
 

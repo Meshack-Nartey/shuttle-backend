@@ -1,3 +1,0 @@
-ALTER TABLE school ADD COLUMN external_id VARCHAR(64) UNIQUE;
-ALTER TABLE shuttle ADD COLUMN external_id VARCHAR(64) UNIQUE;
-
