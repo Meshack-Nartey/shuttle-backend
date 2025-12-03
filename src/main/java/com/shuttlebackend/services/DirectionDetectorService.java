@@ -23,12 +23,12 @@ public class DirectionDetectorService {
 
         if (polyForward != null && !polyForward.isEmpty()) {
             var nf = polyService.nearestOnPolyline(routeId, polyForward, lat, lon);
-            distF = GeoUtils.haversineMeters(lat, lon, nf.proj.lat, nf.proj.lon);
+            distF = GeoUtils.haversineMeters(lat, lon, nf.proj().lat, nf.proj().lon);
         }
 
         if (polyBackward != null && !polyBackward.isEmpty()) {
             var nb = polyService.nearestOnPolyline(routeId, polyBackward, lat, lon);
-            distB = GeoUtils.haversineMeters(lat, lon, nb.proj.lat, nb.proj.lon);
+            distB = GeoUtils.haversineMeters(lat, lon, nb.proj().lat, nb.proj().lon);
         }
 
         if (Double.isInfinite(distF) && Double.isInfinite(distB)) return Direction.UNKNOWN;

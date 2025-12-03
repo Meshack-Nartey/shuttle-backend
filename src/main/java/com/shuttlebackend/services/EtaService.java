@@ -88,19 +88,60 @@ public class EtaService {
             return resp;
         }
 
-        // Ensure pickup and dropoff exist along the chosen direction's stop list
+        // NEW: validate that both stops exist in the chosen direction and that pickup is before dropoff
+        try {
+            List<RouteStop> orderedStops = routeStopRepository.findByRoute_IdOrderByStopOrderAsc(route.getId());
+            // find indices in forward order
+            int pickIdx = -1, dropIdx = -1;
+            for (int i = 0; i < orderedStops.size(); i++) {
+                RouteStop rs = orderedStops.get(i);
+                if (rs.getId().equals(pickup.getId())) pickIdx = i;
+                if (rs.getId().equals(dropoff.getId())) dropIdx = i;
+            }
+            if (dir == DirectionDetectorService.Direction.FORWARD) {
+                if (pickIdx == -1 || dropIdx == -1) {
+                    EtaResponseDto resp = new EtaResponseDto(shuttleId, pickupStopId, dropoffStopId, 0L, ISO.format(Instant.now()), 0.0, 0.0, 0.0, dirStr, 0.0, 0,0,0, "stop_not_on_direction");
+                    publishEta(shuttleId, resp);
+                    return resp;
+                }
+                if (pickIdx >= dropIdx) {
+                    EtaResponseDto resp = new EtaResponseDto(shuttleId, pickupStopId, dropoffStopId, 0L, ISO.format(Instant.now()), 0.0, 0.0, 0.0, dirStr, 0.0, 0,0,0, "invalid_stop_order");
+                    publishEta(shuttleId, resp);
+                    return resp;
+                }
+            } else if (dir == DirectionDetectorService.Direction.BACKWARD) {
+                // backward direction corresponds to reverse of forward-ordered stops
+                if (pickIdx == -1 || dropIdx == -1) {
+                    EtaResponseDto resp = new EtaResponseDto(shuttleId, pickupStopId, dropoffStopId, 0L, ISO.format(Instant.now()), 0.0, 0.0, 0.0, dirStr, 0.0, 0,0,0, "stop_not_on_direction");
+                    publishEta(shuttleId, resp);
+                    return resp;
+                }
+                // in backward travel, pickup should appear after dropoff in forward ordering
+                if (pickIdx <= dropIdx) {
+                    EtaResponseDto resp = new EtaResponseDto(shuttleId, pickupStopId, dropoffStopId, 0L, ISO.format(Instant.now()), 0.0, 0.0, 0.0, dirStr, 0.0, 0,0,0, "invalid_stop_order");
+                    publishEta(shuttleId, resp);
+                    return resp;
+                }
+            }
+        } catch (Exception ex) {
+            // if repository lookup fails for any reason, fail gracefully
+            EtaResponseDto resp = new EtaResponseDto(shuttleId, pickupStopId, dropoffStopId, 0L, ISO.format(Instant.now()), 0.0, 0.0, 0.0, dirStr, 0.0, 0,0,0, "stop_validation_error");
+            publishEta(shuttleId, resp);
+            return resp;
+        }
+
         // Using coordinates: snap them to the used polyline and compute indices
         var shuttleNearest = polyService.nearestOnPolyline(usedPoly, lat, lon);
-        int shuttleSeg = shuttleNearest.segmentIndex;
-        double shuttleT = shuttleNearest.proj.t;
+        int shuttleSeg = shuttleNearest.segmentIndex();
+        double shuttleT = shuttleNearest.proj().t;
 
         var pickupNearest = polyService.nearestOnPolyline(usedPoly, pickup.getLatitude().doubleValue(), pickup.getLongitude().doubleValue());
-        int pickSeg = pickupNearest.segmentIndex;
-        double pickT = pickupNearest.proj.t;
+        int pickSeg = pickupNearest.segmentIndex();
+        double pickT = pickupNearest.proj().t;
 
         var dropNearest = polyService.nearestOnPolyline(usedPoly, dropoff.getLatitude().doubleValue(), dropoff.getLongitude().doubleValue());
-        int dropSeg = dropNearest.segmentIndex;
-        double dropT = dropNearest.proj.t;
+        int dropSeg = dropNearest.segmentIndex();
+        double dropT = dropNearest.proj().t;
 
         // compute distances
         double distShuttleToPickup = polyService.distanceAlong(usedPoly, shuttleSeg, shuttleT, pickSeg, pickT);

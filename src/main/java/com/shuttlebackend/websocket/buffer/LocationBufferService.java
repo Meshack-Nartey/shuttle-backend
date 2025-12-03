@@ -143,8 +143,8 @@ public class LocationBufferService {
 
                                         // snap shuttle to polyline
                                         var shuttleNearest2 = polyService.nearestOnPolyline(usedPoly, latest.getLatitude().doubleValue(), latest.getLongitude().doubleValue());
-                                        int shuttleSeg2 = shuttleNearest2.segmentIndex;
-                                        double shuttleT2 = shuttleNearest2.proj.t;
+                                        int shuttleSeg2 = shuttleNearest2.segmentIndex();
+                                        double shuttleT2 = shuttleNearest2.proj().t;
 
                                         double bestDist = Double.POSITIVE_INFINITY;
                                         RouteStop bestStop = null;
@@ -152,8 +152,8 @@ public class LocationBufferService {
                                         // find next stop with minimal positive distance along polyline
                                         for (RouteStop s : ordered) {
                                             var sn = polyService.nearestOnPolyline(usedPoly, s.getLatitude().doubleValue(), s.getLongitude().doubleValue());
-                                            int sSeg = sn.segmentIndex;
-                                            double sT = sn.proj.t;
+                                            int sSeg = sn.segmentIndex();
+                                            double sT = sn.proj().t;
                                             double dAlong = polyService.distanceAlong(usedPoly, shuttleSeg2, shuttleT2, sSeg, sT);
                                             if (dAlong >= 0 && dAlong < bestDist && dAlong > 5.0) { // prefer stops at least 5m ahead
                                                 bestDist = dAlong;
@@ -167,8 +167,8 @@ public class LocationBufferService {
                                             RouteStop minStop = null;
                                             for (RouteStop s : ordered) {
                                                 var sn = polyService.nearestOnPolyline(usedPoly, s.getLatitude().doubleValue(), s.getLongitude().doubleValue());
-                                                int sSeg = sn.segmentIndex;
-                                                double sT = sn.proj.t;
+                                                int sSeg = sn.segmentIndex();
+                                                double sT = sn.proj().t;
                                                 double dAlong = polyService.distanceAlong(usedPoly, shuttleSeg2, shuttleT2, sSeg, sT);
                                                 double absd = Math.abs(dAlong);
                                                 if (absd < minAbs) {

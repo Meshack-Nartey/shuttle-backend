@@ -46,10 +46,10 @@ public class GeoUtils {
         return new Projection(projY, projX, t);
     }
 
-    public static class Nearest {
-        public final int segmentIndex; // index of segment start
-        public final Projection proj;
-        public Nearest(int segmentIndex, Projection proj) { this.segmentIndex = segmentIndex; this.proj = proj; }
+    /**
+     * @param segmentIndex index of segment start
+     */
+    public record Nearest(int segmentIndex, Projection proj) {
     }
 
     // polyline: list of [lat, lon]
