@@ -56,4 +56,14 @@ public class TripActivity {
     @Column(name = "status", length = 20)
     private String status;
 
+    // new fields for reminders
+    @Column(name = "reminder_offset_minutes")
+    private Integer reminderOffsetMinutes;
+
+    @Column(name = "reminder_scheduled_at")
+    private Instant reminderScheduledAt;
+
+    @Column(name = "notification_sent")
+    private Boolean notificationSent = false;
+
 }

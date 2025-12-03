@@ -101,6 +101,9 @@ class EtaServiceUnitTest {
         when(directionDetector.detectDirection(shuttleId, route.getId(), lu.getLatitude().doubleValue(), lu.getLongitude().doubleValue(), route.getPolylineForward(), route.getPolylineBackward()))
                 .thenReturn(DirectionDetectorService.Direction.FORWARD);
 
+        // mock ordered stops for validation
+        when(routeStopRepository.findByRoute_IdOrderByStopOrderAsc(route.getId())).thenReturn(List.of(pickup, dropoff));
+
         EtaResponseDto resp = etaService.calculateEta(shuttleId, pickupId, dropoffId);
 
         assertThat(resp).isNotNull();
