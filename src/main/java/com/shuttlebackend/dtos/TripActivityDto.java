@@ -15,4 +15,9 @@ public class TripActivityDto {
     private String estimatedTime;
     private String actualTime;
     private String status;
+
+    // reminder fields
+    private Integer reminderOffsetMinutes;
+    private String reminderScheduledAt;
+    private Boolean notificationSent;
 }
