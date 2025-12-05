@@ -2,18 +2,13 @@ package com.shuttlebackend.controllers;
 
 import com.shuttlebackend.dtos.TripMatchRequest;
 import com.shuttlebackend.dtos.MatchedRouteDto;
-import com.shuttlebackend.entities.RouteStop;
-import com.shuttlebackend.repositories.RouteStopRepository;
+import com.shuttlebackend.services.RoutingResolverService;
 import com.shuttlebackend.services.TripMatchingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @RestController
 @RequestMapping("/student/trip")
@@ -21,7 +16,7 @@ import java.util.stream.Collectors;
 public class StudentTripController {
 
     private final TripMatchingService tripMatchingService;
-    private final RouteStopRepository routeStopRepository;
+    private final RoutingResolverService routingResolverService;
 
     @PostMapping("/match")
     public ResponseEntity<?> matchTrip(@RequestBody TripMatchRequest req) {
@@ -31,50 +26,49 @@ public class StudentTripController {
 
         Integer pickupId = req.getPickupStopId();
         Integer dropoffId = req.getDropoffStopId();
+        String pickupName = req.getPickupStopName();
+        String dropoffName = req.getDropoffStopName();
 
-        // Resolve names if IDs not provided
-        if (pickupId == null) {
-            String pname = req.getPickupStopName();
-            if (pname != null && !pname.isBlank()) {
-                List<RouteStop> found = routeStopRepository.findByStopNameContainingIgnoreCase(pname);
-                if (found.isEmpty()) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "pickup stop not found: " + pname));
-                }
-                // try exact (case-insensitive) match
-                List<RouteStop> exact = found.stream()
-                        .filter(r -> r.getStopName().equalsIgnoreCase(pname))
-                        .collect(Collectors.toList());
-                if (exact.size() == 1) pickupId = exact.get(0).getId();
-                else if (found.size() == 1) pickupId = found.get(0).getId();
-                else return ResponseEntity.badRequest().body(Map.of("error", "pickup stop name is ambiguous; provide the stop id", "matches", found.stream().map(RouteStop::getStopName).collect(Collectors.toList())));
-            }
+        // ░░░░░░ CASE 1 — USER PROVIDED BOTH IDs ░░░░░░
+        if (pickupId != null && dropoffId != null) {
+            List<MatchedRouteDto> routes = tripMatchingService.matchTrip(pickupId, dropoffId);
+            return ResponseEntity.ok(Map.of("routes", routes));
         }
 
-        if (dropoffId == null) {
-            String dname = req.getDropoffStopName();
-            if (dname != null && !dname.isBlank()) {
-                List<RouteStop> found = routeStopRepository.findByStopNameContainingIgnoreCase(dname);
-                if (found.isEmpty()) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "dropoff stop not found: " + dname));
-                }
-                List<RouteStop> exact = found.stream()
-                        .filter(r -> r.getStopName().equalsIgnoreCase(dname))
-                        .collect(Collectors.toList());
-                if (exact.size() == 1) dropoffId = exact.get(0).getId();
-                else if (found.size() == 1) dropoffId = found.get(0).getId();
-                else return ResponseEntity.badRequest().body(Map.of("error", "dropoff stop name is ambiguous; provide the stop id", "matches", found.stream().map(RouteStop::getStopName).collect(Collectors.toList())));
-            }
-        }
-
+        // ░░░░░░ CASE 2 — USER PROVIDED NAMES (USE THE RESOLVER) ░░░░░░
         if (pickupId == null || dropoffId == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "pickupStopId and dropoffStopId are required (or provide unambiguous stop names)"));
+
+            if (pickupName == null || pickupName.isBlank() ||
+                    dropoffName == null || dropoffName.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "error", "Provide either stop IDs or non-empty stop names"
+                ));
+            }
+
+            // 🔥 Full intelligent name resolution using RoutingResolverService
+            Map<String, Object> result = routingResolverService.resolveByNames(pickupName, dropoffName);
+
+            // Forward error to client if resolver failed
+            if (result.containsKey("error")) {
+                return ResponseEntity.badRequest().body(result);
+            }
+
+            // Extract resolved stops
+            Map<String, Object> pickupResolved = (Map<String, Object>) result.get("pickupStop");
+            Map<String, Object> dropoffResolved = (Map<String, Object>) result.get("dropoffStop");
+
+            pickupId = (Integer) pickupResolved.get("stop_id");
+            dropoffId = (Integer) dropoffResolved.get("stop_id");
+
+            if (pickupId == null || dropoffId == null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "error", "Resolver returned invalid stop IDs"
+                ));
+            }
         }
 
+        // ░░░░░░ FINAL — MATCH TRIP USING RESOLVED IDs ░░░░░░
         List<MatchedRouteDto> routes = tripMatchingService.matchTrip(pickupId, dropoffId);
-
-        Map<String, Object> resp = new HashMap<>();
-        resp.put("routes", routes);
-
-        return ResponseEntity.ok(resp);
+        return ResponseEntity.ok(Map.of("routes", routes));
     }
 }

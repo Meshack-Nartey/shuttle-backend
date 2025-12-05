@@ -12,6 +12,7 @@ import com.shuttlebackend.repositories.RouteRepository;
 import com.shuttlebackend.repositories.ShuttleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,7 @@ public class TripMatchingService {
     private final LocationUpdateRepository locationUpdateRepository;
     private final ShuttleRepository shuttleRepository;
 
+    @Transactional(readOnly = true)
     public List<MatchedRouteDto> matchTrip(Integer pickupStopId, Integer dropoffStopId) {
         List<Route> routes = routeRepository.findRoutesContainingBothStops(pickupStopId, dropoffStopId);
 

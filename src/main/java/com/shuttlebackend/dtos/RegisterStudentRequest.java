@@ -8,8 +8,9 @@ public class RegisterStudentRequest {
     private String studentIdNumber;
     private String firstName;
     private String lastName;
-    // Accept external school identifier (e.g., "KNUST654") from frontend
-    private String schoolId;
+    // The display name of the school as sent by the frontend (e.g., "KNUST").
+    // The backend will resolve this to the internal school.id (case-insensitive, trimmed).
+    private String schoolName;
     // Optional username that the student can provide for display purposes
     private String username;
 

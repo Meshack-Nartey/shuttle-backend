@@ -4,7 +4,8 @@ import com.shuttlebackend.dtos.RegisterDriverRequest;
 import com.shuttlebackend.entities.Driver;
 import com.shuttlebackend.entities.User;
 import com.shuttlebackend.repositories.DriverRepository;
-import com.shuttlebackend.repositories.SchoolRepository;
+import com.shuttlebackend.entities.School;
+import com.shuttlebackend.services.SchoolService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +17,7 @@ public class DriverService {
 
     private final DriverRepository driverRepo;
     private final UserService userService;
-    private final SchoolRepository schoolRepo;
+    private final SchoolService schoolService;
 
     /**
      * Register a driver (admin or public depending on your policies).
@@ -34,17 +35,9 @@ public class DriverService {
         driver.setUser(user);
         driver.setFirstName(dto.getFirstName());
         driver.setLastName(dto.getLastName());
-        // resolve school by external id (string) first, then fallback to numeric id
-        var school = schoolRepo.findByExternalId(dto.getSchoolId())
-                .or(() -> {
-                    try {
-                        Integer id = Integer.parseInt(dto.getSchoolId());
-                        return schoolRepo.findById(id);
-                    } catch (NumberFormatException nfe) {
-                        return Optional.empty();
-                    }
-                })
-                .orElseThrow(() -> new RuntimeException("School not found"));
+        // resolve school by display name sent by frontend (case-insensitive trimmed)
+        var school = schoolService.findByNameIgnoreCaseTrim(dto.getSchoolName())
+                .orElseThrow(() -> new RuntimeException("Invalid school selected"));
         driver.setSchool(school);
 
         return driverRepo.save(driver);

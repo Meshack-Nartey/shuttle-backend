@@ -40,10 +40,6 @@ public class School {
     @Column(name = "created_at")
     private Instant createdAt;
 
-    // External identifier used by frontend (e.g., "KNUST654"). Stored as string in DB.
-    @Column(name = "external_id", length = 100)
-    private String externalId;
-
     @OneToMany(mappedBy = "school")
     @JsonIgnore
     private Set<Student> students;

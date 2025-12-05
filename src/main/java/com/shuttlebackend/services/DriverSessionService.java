@@ -4,6 +4,7 @@ import com.shuttlebackend.entities.Driver;
 import com.shuttlebackend.entities.Shuttle;
 import com.shuttlebackend.entities.Route;
 import com.shuttlebackend.entities.DriverSession;
+import com.shuttlebackend.exceptions.ActiveSessionExistsException;
 import com.shuttlebackend.repositories.DriverSessionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,18 +33,17 @@ public class DriverSessionService {
             if (!active.getDriver().getId().equals(driver.getId())) {
                 throw new IllegalStateException("Shuttle already in use by another driver");
             }
-            // if the active session belongs to the same driver, we will end it and create a fresh one
+            // if the active session belongs to the same driver, we will allow the request to proceed
+            // (do not auto-end the existing session here)
         });
 
-        // If the driver has an existing active session, set that shuttle back to Available
-        repo.findByDriverIdAndEndedAtIsNull(driver.getId()).ifPresent(prev -> {
-            Shuttle prevShuttle = prev.getShuttle();
-            shuttleService.updateStatus(prevShuttle, "Available");
-        });
+        // Check if driver already has an active session — if so, reject start request
+        boolean hasActive = repo.findActiveByDriverId(driver.getId()).isPresent();
+        if (hasActive) {
+            throw new ActiveSessionExistsException("You already have an active session. Please end your current session before starting a new one.");
+        }
 
-        // End all open sessions for this driver
-        repo.endActiveSessions(driver.getId());
-
+        // create a new session only if no active session exists
         DriverSession session = new DriverSession();
         session.setDriver(driver);
         session.setShuttle(shuttle);

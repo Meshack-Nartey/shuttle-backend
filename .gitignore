@@ -81,3 +81,20 @@ Thumbs.db
 logs/
 server.log
 server.err
+
+# Firebase service account keys
+firebase-service-account.json
+firebase.json
+*.firebase.json
+*.serviceAccount.json
+serviceAccount.json
+*.secret.json
+
+# Any JSON in resources that may contain secrets
+src/main/resources/firebase-service-account.json
+
+# Key folders
+keys/
+.secrets/
+secret/
+secrets

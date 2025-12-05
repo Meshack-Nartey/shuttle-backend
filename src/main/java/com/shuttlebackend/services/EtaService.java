@@ -180,7 +180,8 @@ public class EtaService {
     private void publishEta(Integer shuttleId, EtaResponseDto resp) {
         try {
             String topic = "/topic/shuttle/" + shuttleId + "/eta";
-            messagingTemplate.convertAndSend(topic, resp);
+            // use 3-arg overload to avoid ambiguity in tests/mocks
+            messagingTemplate.convertAndSend(topic, resp, java.util.Collections.emptyMap());
         } catch (Exception ex) {
             // logging omitted to keep code concise
         }

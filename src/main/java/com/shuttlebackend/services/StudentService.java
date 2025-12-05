@@ -7,7 +7,8 @@ import org.springframework.stereotype.Service;
 import com.shuttlebackend.dtos.RegisterStudentRequest;
 import com.shuttlebackend.entities.Student;
 import com.shuttlebackend.entities.User;
-import com.shuttlebackend.repositories.SchoolRepository;
+import com.shuttlebackend.entities.School;
+import com.shuttlebackend.services.SchoolService;
 import com.shuttlebackend.mappers.StudentMapper;
 import java.util.Optional;
 
@@ -17,7 +18,7 @@ public class StudentService {
 
     private final StudentRepository studentRepo;
     private final UserService userService;
-    private final SchoolRepository schoolRepo;
+    private final SchoolService schoolService;
     private final StudentMapper studentMapper;
 
 
@@ -30,17 +31,9 @@ public class StudentService {
         }
         // create user account
         User user = userService.createUser(dto.getEmail(), dto.getPassword(), "ROLE_STUDENT");
-        // resolve school by external id (string) first, then fallback to numeric id if the frontend supplied a numeric id string
-        var school = schoolRepo.findByExternalId(dto.getSchoolId())
-                .or(() -> {
-                    try {
-                        Integer id = Integer.parseInt(dto.getSchoolId());
-                        return schoolRepo.findById(id);
-                    } catch (NumberFormatException nfe) {
-                        return Optional.empty();
-                    }
-                })
-                .orElseThrow(() -> new RuntimeException("School not found"));
+        // Resolve school by display name provided by frontend (case-insensitive, trimmed)
+        var school = schoolService.findByNameIgnoreCaseTrim(dto.getSchoolName())
+                .orElseThrow(() -> new RuntimeException("Invalid school selected"));
         Student student = studentMapper.toEntity(dto);
         student.setUser(user);
         if (dto.getUsername() != null && !dto.getUsername().isBlank()) {

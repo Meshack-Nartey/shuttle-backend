@@ -2,6 +2,7 @@ package com.shuttlebackend.repositories;
 
 import com.shuttlebackend.entities.DriverSession;
 import org.springframework.data.jpa.repository.*;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -15,6 +16,9 @@ public interface DriverSessionRepository extends JpaRepository<DriverSession, In
     void endActiveSessions(Integer driverId);
 
     Optional<DriverSession> findByDriverIdAndEndedAtIsNull(Integer driverId);
+
+    @Query("SELECT s FROM DriverSession s WHERE s.driver.id = :driverId AND s.endedAt IS NULL")
+    Optional<DriverSession> findActiveByDriverId(@Param("driverId") Integer driverId);
 
     @Query("SELECT s FROM DriverSession s WHERE s.shuttle.id = :shuttleId AND s.endedAt IS NULL")
     Optional<DriverSession> findActiveByShuttleId(Integer shuttleId);

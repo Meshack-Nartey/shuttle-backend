@@ -1,5 +1,6 @@
 package com.shuttlebackend.utils;
 
+import com.shuttlebackend.exceptions.ActiveSessionExistsException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -13,6 +14,15 @@ import java.util.stream.Collectors;
 
 @ControllerAdvice
 public class ApiExceptionHandler {
+
+    @ExceptionHandler(ActiveSessionExistsException.class)
+    public ResponseEntity<Map<String, Object>> handleActiveSessionExists(ActiveSessionExistsException ex) {
+        Map<String, Object> body = Map.of(
+                "success", false,
+                "message", ex.getMessage()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
 
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ApiResponse<?>> handleIllegalState(IllegalStateException ex) {

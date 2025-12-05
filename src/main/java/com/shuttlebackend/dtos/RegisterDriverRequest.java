@@ -8,8 +8,8 @@ import lombok.Setter;
 public class RegisterDriverRequest {
     private String firstName;
     private String lastName;
-    // Accept external school identifier (e.g., "KNUST654") from frontend
-    private String schoolId;
+    // School display name (e.g., "KNUST"). Backend resolves to internal school id.
+    private String schoolName;
     private String email;
     private String password;
 }

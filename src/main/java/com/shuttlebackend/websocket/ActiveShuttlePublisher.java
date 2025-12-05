@@ -13,10 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -26,27 +23,45 @@ public class ActiveShuttlePublisher {
     private final DriverSessionRepository sessionRepo;
     private final LocationUpdateRepository locationRepo;
     private final SimpMessagingTemplate messagingTemplate;
+
     private final Logger logger = LoggerFactory.getLogger(ActiveShuttlePublisher.class);
 
     public void publishActiveShuttles() {
         try {
+
             if (shuttleRepo.countByStatus("Active") == 0) return;
+
             List<Shuttle> active = shuttleRepo.findAllByStatus("Active");
             if (active == null || active.isEmpty()) return;
 
-            // group payloads by school external id
-            Map<String, List<StudentActiveShuttleDto>> bySchool = new HashMap<>();
+            // since School.externalId is removed, group by schoolId instead
+            Map<Long, List<StudentActiveShuttleDto>> bySchool = new HashMap<>();
 
             for (Shuttle s : active) {
+
                 Integer shuttleId = s.getId();
+
                 // latest location
-                LocationUpdate latestLoc = locationRepo.findTop1ByShuttle_IdOrderByCreatedAtDesc(shuttleId).orElse(null);
-                // active session to get route name
-                DriverSession session = sessionRepo.findActiveByShuttleId(shuttleId).orElse(null);
-                String routeName = session != null && session.getRoute() != null ? session.getRoute().getRouteName() : null;
+                LocationUpdate latestLoc =
+                        locationRepo.findTop1ByShuttle_IdOrderByCreatedAtDesc(shuttleId)
+                                .orElse(null);
+
+                // active session for route
+                DriverSession session =
+                        sessionRepo.findActiveByShuttleId(shuttleId)
+                                .orElse(null);
+
+                String routeName =
+                        (session != null && session.getRoute() != null)
+                                ? session.getRoute().getRouteName()
+                                : null;
+
+                // KEEP Shuttle.externalId (fallback to license plate)
+                String shuttleIdentifier =
+                        s.getExternalId() != null ? s.getExternalId() : s.getLicensePlate();
 
                 StudentActiveShuttleDto dto = new StudentActiveShuttleDto(
-                        s.getExternalId() != null ? s.getExternalId() : s.getLicensePlate(),
+                        shuttleIdentifier,
                         latestLoc != null ? latestLoc.getLatitude().doubleValue() : null,
                         latestLoc != null ? latestLoc.getLongitude().doubleValue() : null,
                         routeName,
@@ -54,15 +69,20 @@ public class ActiveShuttlePublisher {
                         latestLoc != null ? latestLoc.getCreatedAt() : null
                 );
 
-                String schoolExternal = s.getSchool() != null ? s.getSchool().getExternalId() : "unknown";
-                bySchool.computeIfAbsent(schoolExternal, k -> new ArrayList<>()).add(dto);
+                // FIX: use schoolId instead of removed schoolExternalId
+                Long schoolId = (s.getSchool() != null)
+                        ? s.getSchool().getId()
+                        : -1L;
+
+                bySchool.computeIfAbsent(schoolId, k -> new ArrayList<>()).add(dto);
             }
 
-            // broadcast per school
-            for (Map.Entry<String, List<StudentActiveShuttleDto>> e : bySchool.entrySet()) {
+            // broadcast per school ID
+            for (Map.Entry<Long, List<StudentActiveShuttleDto>> e : bySchool.entrySet()) {
                 String topic = "/topic/student/shuttles/" + e.getKey();
                 messagingTemplate.convertAndSend(topic, e.getValue());
             }
+
         } catch (Exception ex) {
             logger.warn("Failed to publish active shuttles: {}", ex.getMessage());
         }

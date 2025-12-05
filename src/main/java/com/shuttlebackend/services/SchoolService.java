@@ -20,4 +20,10 @@ public class SchoolService {
     public School save(School school) {
         return repo.save(school);
     }
+
+    // Resolve school by display name (case-insensitive, trimming whitespace)
+    public Optional<School> findByNameIgnoreCaseTrim(String name) {
+        if (name == null) return Optional.empty();
+        return repo.findBySchoolNameIgnoreCaseTrim(name);
+    }
 }

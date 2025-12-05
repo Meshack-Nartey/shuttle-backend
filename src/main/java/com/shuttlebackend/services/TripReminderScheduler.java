@@ -18,6 +18,7 @@ public class TripReminderScheduler {
 
     private final TripActivityRepository tripRepo;
     private final SimpMessagingTemplate messagingTemplate;
+    private final FcmService fcmService;
 
     // run every 30 seconds - check for reminders to send
     @Scheduled(fixedDelay = 30000, initialDelay = 10000)
@@ -39,12 +40,22 @@ public class TripReminderScheduler {
                 // publish to student topic
                 if (studentId != null) {
                     String topic = "/topic/student/" + studentId + "/reminder";
-                    messagingTemplate.convertAndSend(topic, (Object) java.util.Map.of(
-                            "tripId", t.getId(),
-                            "message", message,
-                            "minutesLeft", minutesLeft,
-                            "reminderScheduledAt", t.getReminderScheduledAt()
-                    ));
+                    // use 3-arg overload (destination, payload, headers) to avoid ambiguous overload resolution
+                    messagingTemplate.convertAndSend(topic,
+                            java.util.Map.<String, Object>of(
+                                    "tripId", t.getId(),
+                                    "message", message,
+                                    "minutesLeft", minutesLeft,
+                                    "reminderScheduledAt", t.getReminderScheduledAt()
+                            ),
+                            java.util.Collections.emptyMap());
+
+                    // send FCM push notifications as well
+                    try {
+                        fcmService.sendReminderToStudent(studentId, "Shuttle arriving", message, java.util.Map.of("tripId", String.valueOf(t.getId())));
+                    } catch (Exception ex) {
+                        // ignore FCM errors per-token handled inside FcmService
+                    }
                 }
 
                 // update trip activity: mark notification_sent and optionally set status to NOTIFIED
@@ -69,10 +80,12 @@ public class TripReminderScheduler {
                 Integer studentId = t.getStudent() != null ? t.getStudent().getId() : null;
                 if (studentId != null) {
                     String topic = "/topic/student/" + studentId + "/trip-status";
-                    messagingTemplate.convertAndSend(topic, (Object) java.util.Map.of(
-                            "tripId", t.getId(),
-                            "status", "PAST"
-                    ));
+                    messagingTemplate.convertAndSend(topic,
+                            java.util.Map.<String, Object>of(
+                                    "tripId", t.getId(),
+                                    "status", "PAST"
+                            ),
+                            java.util.Collections.emptyMap());
                 }
             } catch (Exception ex) {
                 // ignore

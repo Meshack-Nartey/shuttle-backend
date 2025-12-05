@@ -144,48 +144,62 @@
 			<scope>test</scope>
 		</dependency>
 
-    </dependencies>
+		<!-- In-memory DB for tests -->
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>test</scope>
+		</dependency>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
-                <configuration>
-                    <release>21</release>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>1.18.42</version>
-                        </path>
-                        <path>
-                            <groupId>org.mapstruct</groupId>
-                            <artifactId>mapstruct-processor</artifactId>
-                            <version>1.5.5.Final</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-            </plugin>
+		<!-- Firebase Admin SDK for FCM -->
+		<dependency>
+			<groupId>com.google.firebase</groupId>
+			<artifactId>firebase-admin</artifactId>
+			<version>9.2.0</version>
+		</dependency>
 
-            <!-- Flyway Maven plugin (adds mvn flyway:{info,migrate,...}) -->
-            <plugin>
-                <groupId>org.flywaydb</groupId>
-                <artifactId>flyway-maven-plugin</artifactId>
-                <configuration>
-                    <!-- supply via -Dflyway.url / -Dflyway.user / -Dflyway.password when running locally -->
-                    <url>jdbc:mysql://localhost:3306/shuttle_backend_new</url>
-                    <user>root</user>
-                    <password>1Science,3</password>
-                    <cleanDisabled>false</cleanDisabled>
-                    <!-- points to project's migration folder -->
-                    <locations>filesystem:src/main/resources/db/migration</locations>
-                    <schemas>shuttle_backend_new</schemas>
-                </configuration>
-            </plugin>
+	</dependencies>
 
-        </plugins>
-    </build>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.11.0</version>
+				<configuration>
+					<release>21</release>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+							<version>1.18.42</version>
+						</path>
+						<path>
+							<groupId>org.mapstruct</groupId>
+							<artifactId>mapstruct-processor</artifactId>
+							<version>1.5.5.Final</version>
+						</path>
+					</annotationProcessorPaths>
+				</configuration>
+			</plugin>
+
+			<!-- Flyway Maven plugin (adds mvn flyway:{info,migrate,...}) -->
+			<plugin>
+				<groupId>org.flywaydb</groupId>
+				<artifactId>flyway-maven-plugin</artifactId>
+				<configuration>
+					<!-- supply via -Dflyway.url / -Dflyway.user / -Dflyway.password when running locally -->
+					<url>jdbc:mysql://localhost:3306/shuttle_backend_new</url>
+					<user>root</user>
+					<password>1Science,3</password>
+					<cleanDisabled>false</cleanDisabled>
+					<!-- points to project's migration folder -->
+					<locations>filesystem:src/main/resources/db/migration</locations>
+					<schemas>shuttle_backend_new</schemas>
+				</configuration>
+			</plugin>
+
+		</plugins>
+	</build>
 
 </project>

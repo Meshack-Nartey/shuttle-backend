@@ -2,6 +2,7 @@ package com.shuttlebackend.controllers;
 
 import com.shuttlebackend.dtos.TripReminderRequestDto;
 import com.shuttlebackend.dtos.EtaResponseDto;
+import com.shuttlebackend.dtos.TripActivityDto;
 import com.shuttlebackend.entities.TripActivity;
 import com.shuttlebackend.entities.Student;
 import com.shuttlebackend.entities.RouteStop;
@@ -74,7 +75,22 @@ public class TripActivityController {
         ta.setNotificationSent(false);
 
         TripActivity created = tripActivityService.create(ta);
-        return ResponseEntity.ok(created);
+
+        // Map to DTO to avoid lazy-loading issues during JSON serialization
+        TripActivityDto dto = new TripActivityDto();
+        dto.setTripId(created.getId());
+        dto.setStudentId(studentOpt.get().getId().intValue());
+        dto.setShuttleId(shuttleOpt.get().getId().intValue());
+        dto.setDepartureStopId(pickupOpt.get().getId().intValue());
+        dto.setArrivalStopId(dropOpt.get().getId().intValue());
+        dto.setRouteId(created.getRouteId());
+        dto.setEstimatedTime(created.getEstimatedTime() == null ? null : created.getEstimatedTime().toString());
+        dto.setActualTime(created.getActualTime() == null ? null : created.getActualTime().toString());
+        dto.setStatus(created.getStatus());
+        dto.setReminderOffsetMinutes(created.getReminderOffsetMinutes());
+        dto.setReminderScheduledAt(created.getReminderScheduledAt() == null ? null : created.getReminderScheduledAt().toString());
+        dto.setNotificationSent(created.getNotificationSent());
+
+        return ResponseEntity.ok(dto);
     }
 }
-

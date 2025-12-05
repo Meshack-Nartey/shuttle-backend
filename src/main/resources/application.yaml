@@ -29,3 +29,8 @@ spring:
     secret: "A92F3C19A8E6D1F7B92744AEE1C5A3C0D998DAB12399F567B8C9D01A44EE9A34"
     expiration: 3600000   # 1 hour in ms
 
+  logging:
+    level:
+      org.hibernate.type.descriptor.sql: TRACE
+      org.hibernate.orm.jdbc.bind: TRACE
+
