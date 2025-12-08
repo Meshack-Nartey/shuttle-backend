@@ -31,8 +31,9 @@ public class User {
     private String password;
 
     @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
-    private String role;
+    private Role role = Role.ROLE_STUDENT;
 
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at")

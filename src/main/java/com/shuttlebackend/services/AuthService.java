@@ -14,11 +14,13 @@ public class AuthService {
 
     // Issue short-lived access token
     public String issueToken(User user) {
-        return jwtHelper.generateAccessToken(user.getEmail());
+        String role = user.getRole() != null ? user.getRole().name() : null;
+        return jwtHelper.generateAccessToken(user.getEmail(), role);
     }
 
     public String issueAccessToken(User user) {
-        return jwtHelper.generateAccessToken(user.getEmail());
+        String role = user.getRole() != null ? user.getRole().name() : null;
+        return jwtHelper.generateAccessToken(user.getEmail(), role);
     }
 
     // Issue refresh token WITHOUT SAVING IT ANYWHERE

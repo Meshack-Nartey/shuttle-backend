@@ -31,7 +31,7 @@ public class JwtHelper {
         this.key = Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    private String buildToken(String subject, long expirationMs, String type) {
+    private String buildToken(String subject, long expirationMs, String type, String role) {
         long now = System.currentTimeMillis();
         String jti = UUID.randomUUID().toString();
 
@@ -43,15 +43,19 @@ public class JwtHelper {
                 .signWith(key, SignatureAlgorithm.HS512)
                 .claim("type", type);
 
+        if (role != null) {
+            b.claim("role", role);
+        }
+
         return b.compact();
     }
 
-    public String generateAccessToken(String subject) {
-        return buildToken(subject, accessExpirationMs, "access");
+    public String generateAccessToken(String subject, String role) {
+        return buildToken(subject, accessExpirationMs, "access", role);
     }
 
     public String generateRefreshToken(String subject) {
-        return buildToken(subject, refreshExpirationMs, "refresh");
+        return buildToken(subject, refreshExpirationMs, "refresh", null);
     }
 
     public boolean validateToken(String token) {
@@ -84,6 +88,20 @@ public class JwtHelper {
                     .getBody();
             Object t = c.get("type");
             return t != null ? String.valueOf(t) : null;
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    public String getRole(String token) {
+        try {
+            Claims c = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            Object r = c.get("role");
+            return r != null ? String.valueOf(r) : null;
         } catch (Exception ex) {
             return null;
         }

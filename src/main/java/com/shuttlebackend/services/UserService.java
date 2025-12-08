@@ -1,5 +1,6 @@
 package com.shuttlebackend.services;
 
+import com.shuttlebackend.entities.Role;
 import com.shuttlebackend.entities.User;
 import com.shuttlebackend.repositories.UserRepository;
 import org.springframework.security.core.GrantedAuthority;
@@ -30,7 +31,18 @@ public class UserService implements UserDetailsService {
         User u = new User();
         u.setEmail(email);
         u.setPassword(passwordEncoder.encode(rawPassword));
-        u.setRole(roleStr);
+        // Accept either raw enum name or already prefixed role
+        if (roleStr == null || roleStr.isBlank()) {
+            u.setRole(Role.ROLE_STUDENT);
+        } else {
+            String r = roleStr.trim();
+            if (r.startsWith("ROLE_")) r = r.substring(5);
+            try {
+                u.setRole(com.shuttlebackend.entities.Role.valueOf(r));
+            } catch (IllegalArgumentException ex) {
+                u.setRole(Role.ROLE_STUDENT);
+            }
+        }
         return userRepo.save(u);
     }
 
@@ -52,7 +64,14 @@ public class UserService implements UserDetailsService {
         UserRepository.UserAuthView av = userRepo.findAuthByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        GrantedAuthority authority = new SimpleGrantedAuthority(av.getRole());
+        String roleRaw = av.getRole();
+        String roleName = "STUDENT";
+        if (roleRaw != null && !roleRaw.isBlank()) {
+            // strip ROLE_ prefix if present
+            roleName = roleRaw.startsWith("ROLE_") ? roleRaw.substring(5) : roleRaw;
+        }
+
+        GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + roleName);
         return org.springframework.security.core.userdetails.User.builder()
                 .username(av.getEmail())
                 .password(av.getPassword())

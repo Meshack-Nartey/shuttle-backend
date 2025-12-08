@@ -98,3 +98,9 @@ keys/
 .secrets/
 secret/
 secrets
+
+#############################
+# Environment Variables (VERY IMPORTANT)
+#############################
+.env
+.env.*

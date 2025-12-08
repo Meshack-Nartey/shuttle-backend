@@ -1,5 +1,7 @@
 package com.shuttlebackend.config;
 
+import com.shuttlebackend.security.CustomAccessDeniedHandler;
+import com.shuttlebackend.security.JwtAuthenticationEntryPoint;
 import com.shuttlebackend.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -15,7 +17,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
@@ -42,7 +43,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            JwtAuthenticationFilter jwtAuthenticationFilter
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            JwtAuthenticationEntryPoint authenticationEntryPoint,
+            CustomAccessDeniedHandler accessDeniedHandler
     ) throws Exception {
 
         http
@@ -60,6 +63,9 @@ public class SecurityConfig {
                         .requestMatchers("/routes/**").permitAll()
                         .requestMatchers("/shuttles/**").permitAll()
 
+                        // ADMIN endpoints - only ADMIN role
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+
                         // everything else requires authentication
                         .anyRequest().authenticated()
                 )
@@ -68,8 +74,8 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 
                 .exceptionHandling(ex -> {
-                    ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED));
-                    ex.accessDeniedHandler((req, res, e) -> res.setStatus(HttpStatus.FORBIDDEN.value()));
+                    ex.authenticationEntryPoint(authenticationEntryPoint);
+                    ex.accessDeniedHandler(accessDeniedHandler);
                 });
 
         return http.build();
