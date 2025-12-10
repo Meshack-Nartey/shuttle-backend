@@ -16,10 +16,16 @@ import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
+// OpenAPI
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+
 @RestController
 @RequestMapping("/admin/schools")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
+@Tag(name = "Admin - Schools", description = "Admin CRUD for schools (ADMIN only)")
 public class SchoolAdminController {
 
     private final SchoolRepository schoolRepo;
@@ -28,6 +34,7 @@ public class SchoolAdminController {
     /**
      * Create a new school
      */
+    @Operation(summary = "Create school", description = "Create a school.")
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody RegisterSchoolRequest req) {
         // Prevent duplicate school names
@@ -51,6 +58,7 @@ public class SchoolAdminController {
     /**
      * Get all schools
      */
+    @Operation(summary = "List schools", description = "Return all schools")
     @GetMapping
     public ResponseEntity<?> list() {
         List<SchoolDto> list = schoolRepo.findAll()
@@ -64,8 +72,9 @@ public class SchoolAdminController {
     /**
      * Update a school
      */
+    @Operation(summary = "Update school", description = "Update school metadata by ID")
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Integer id,
+    public ResponseEntity<?> update(@Parameter(description = "School ID") @PathVariable Integer id,
                                     @Valid @RequestBody UpdateSchoolRequest req) {
 
         School school = schoolRepo.findById(id)
@@ -85,8 +94,9 @@ public class SchoolAdminController {
     /**
      * Delete a school
      */
+    @Operation(summary = "Delete school", description = "Delete a school by ID")
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Integer id) {
+    public ResponseEntity<?> delete(@Parameter(description = "School ID") @PathVariable Integer id) {
         if (!schoolRepo.existsById(id)) {
             return ResponseEntity.notFound().build();
         }

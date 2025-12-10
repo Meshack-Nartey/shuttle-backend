@@ -12,14 +12,22 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
+// OpenAPI
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+
 @RestController
 @RequestMapping("/api/devices")
 @RequiredArgsConstructor
+@Tag(name = "Device Tokens", description = "Register and unregister device tokens for push notifications")
 public class DeviceController {
 
     private final DeviceTokenRepository deviceRepo;
     private final StudentRepository studentRepo;
 
+    @Operation(summary = "Register device token",
+            description = "Registers a device token for a student.")
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Map<String, Object> body) {
         Integer studentId = (Integer) body.get("studentId");
@@ -55,6 +63,8 @@ public class DeviceController {
         return ResponseEntity.ok(saved);
     }
 
+    @Operation(summary = "Unregister device token",
+            description = "Mark a device token inactive. Body: { token: String }")
     @PostMapping("/unregister")
     public ResponseEntity<?> unregister(@RequestBody Map<String, Object> body) {
         String token = (String) body.get("token");
@@ -66,4 +76,3 @@ public class DeviceController {
         return ResponseEntity.ok(Map.of("ok", true));
     }
 }
-

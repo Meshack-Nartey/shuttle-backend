@@ -9,9 +9,8 @@ import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-import java.util.LinkedHashSet;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Getter
 @Setter
@@ -38,8 +37,9 @@ public class Route {
     @JoinColumn(name = "school_id", nullable = false)
     private School school;
 
-    @OneToMany(mappedBy = "route")
-    private Set<RouteStop> routeStops = new LinkedHashSet<>();
+    @OneToMany(mappedBy = "route", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("stopOrder ASC")
+    private List<RouteStop> routeStops = new ArrayList<>();
 
     // typed JSON representation of forward/backward polylines: list of [lat, lon]
     @Lob

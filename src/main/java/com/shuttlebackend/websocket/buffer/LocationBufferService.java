@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
+import org.slf4j.LoggerFactory;
 
 @Service
 @RequiredArgsConstructor
@@ -238,9 +239,8 @@ public class LocationBufferService {
                             latest.getCreatedAt()
                     );
 
-                    messagingTemplate.convertAndSend(driverTopic, realtime);
-
-                } catch (Exception ignore) {
+                } catch (Exception ex) {
+                    LoggerFactory.getLogger(LocationBufferService.class).warn("Realtime processing error: ", ex);
                 }
 
             });

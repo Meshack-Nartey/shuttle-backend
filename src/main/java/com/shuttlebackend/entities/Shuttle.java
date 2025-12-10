@@ -47,6 +47,13 @@ public class Shuttle {
     @Column(name = "created_at")
     private Instant createdAt;
 
+    // Persist canonical latest location for quick lookup (nullable)
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
     @OneToMany(mappedBy = "shuttle")
     private Set<LocationUpdate> locationUpdates = new LinkedHashSet<>();
 

@@ -7,7 +7,8 @@ import lombok.Setter;
 
 import java.time.Instant;
 
-@Getter @Setter
+@Getter
+@Setter
 @Entity
 @Table(name = "driver_session", schema = "shuttle_backend_new")
 public class DriverSession {
@@ -33,9 +34,9 @@ public class DriverSession {
     @JoinColumn(name = "route_id", nullable = false)
     private Route route;
 
-    @Column(name = "started_at")
+    @Column(name = "started_at", nullable = true)
     private Instant startedAt;
 
-    @Column(name = "ended_at")
+    @Column(name = "ended_at", nullable = true)
     private Instant endedAt;
 }

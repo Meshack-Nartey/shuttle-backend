@@ -23,9 +23,17 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.Arrays;
 
+// OpenAPI
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 @RestController
 @AllArgsConstructor
 @RequestMapping("/auth")
+@Tag(name = "Auth", description = "Authentication endpoints: signup, login, refresh, logout")
 public class AuthController {
 
     private final AuthenticationManager authManager;
@@ -44,6 +52,8 @@ public class AuthController {
 
 
     // STUDENT SIGNUP
+    @Operation(summary = "Student signup",
+            description = "Register a new student.")
     @PostMapping("/signup/student")
     public ResponseEntity<ApiResponse<?>> signupStudent(@RequestBody RegisterStudentRequest req) {
         var student = studentService.signupStudent(req);
@@ -52,6 +62,8 @@ public class AuthController {
     }
 
     // DRIVER SIGNUP
+    @Operation(summary = "Driver signup",
+            description = "Register a new driver.")
     @PostMapping("/signup/driver")
     public ResponseEntity<ApiResponse<?>> signupDriver(@RequestBody RegisterDriverRequest req) {
         var driver = driverService.registerDriver(req);
@@ -60,6 +72,8 @@ public class AuthController {
     }
 
     // LOGIN
+    @Operation(summary = "Login",
+            description = "Authenticate with email and password.")
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<JwtResponse>> login(@RequestBody JwtRequest request, HttpServletResponse response) {
 
@@ -100,6 +114,8 @@ public class AuthController {
     }
 
     // REFRESH TOKEN (STATELESS)
+    @Operation(summary = "Refresh tokens",
+            description = "Refresh access and refresh tokens.")
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<JwtResponse>> refresh(@RequestBody(required = false) RefreshRequest req,
                                                             HttpServletRequest request,
@@ -154,6 +170,8 @@ public class AuthController {
     }
 
     // LOGOUT - stateless: just delete cookie (no blacklist)
+    @Operation(summary = "Logout",
+            description = "Clears refresh token cookie on client.")
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<?>> logout(
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader,
@@ -173,6 +191,8 @@ public class AuthController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Logged out"));
     }
 
+    @Operation(summary = "Logout all",
+            description = "Clears refresh token cookie. Stateless systems cannot revoke all issued tokens.")
     @PostMapping("/logout/all")
     public ResponseEntity<ApiResponse<?>> logoutAll(HttpServletResponse response) {
 

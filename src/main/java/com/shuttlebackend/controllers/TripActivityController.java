@@ -21,9 +21,15 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 
+// OpenAPI
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+
 @RestController
 @RequestMapping("/api/trips")
 @RequiredArgsConstructor
+@Tag(name = "Trips", description = "Trip activity endpoints: create reminders and manage upcoming trips")
 public class TripActivityController {
 
     private final EtaService etaService;
@@ -32,6 +38,8 @@ public class TripActivityController {
     private final ShuttleRepository shuttleRepository;
     private final RouteStopRepository routeStopRepository;
 
+    @Operation(summary = "Create a trip reminder",
+            description = "Creates a trip_activity entry for the student with a scheduled reminder.")
     @PostMapping("/reminders")
     public ResponseEntity<?> createReminder(@RequestBody TripReminderRequestDto req) {
         // validate offset

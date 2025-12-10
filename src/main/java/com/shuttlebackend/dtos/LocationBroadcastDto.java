@@ -9,8 +9,7 @@ import java.time.Instant;
 @AllArgsConstructor
 public class LocationBroadcastDto {
     private Integer shuttleId;
-    private Double latitude;
-    private Double longitude;
-    private Instant createdAt;
+    private Double lat;
+    private Double lng;
+    private Instant timestamp;
 }
-

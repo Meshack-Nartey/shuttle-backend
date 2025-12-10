@@ -31,6 +31,14 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
 
+// Added OpenAPI annotations
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Tag(name = "Driver", description = "Driver endpoints for driver app: start/end sessions, update location, list shuttles and routes")
 @RestController
 @RequestMapping("/driver")
 @RequiredArgsConstructor
@@ -48,6 +56,8 @@ public class DriverController {
     // ---------------------------------------
     // GET SHUTTLES FOR DRIVER'S SCHOOL
     // ---------------------------------------
+    @Operation(summary = "List shuttles for the authenticated driver's school",
+            description = "Returns a list of shuttles assigned to the driver's school. Requires authentication.")
     @GetMapping("/shuttles")
     public ResponseEntity<ApiResponse<?>> getShuttlesForDriver() {
 
@@ -65,6 +75,12 @@ public class DriverController {
 
 
     // START SESSION
+    @Operation(summary = "Start driver session",
+            description = "Start a new driver session for a shuttle }.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Session started", content = @Content(schema = @Schema(implementation = DriverSessionResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "Driver already has an active session")
+    })
     @PostMapping("/session/start")
     public ResponseEntity<ApiResponse<?>> startSession(
             @Valid @RequestBody StartSessionRequest req
@@ -98,6 +114,8 @@ public class DriverController {
     }
 
     // GET ROUTES FOR DRIVER'S SCHOOL
+    @Operation(summary = "List routes for the authenticated driver's school",
+            description = "Returns all routes associated with the driver's school.")
     @GetMapping("/routes")
     public ResponseEntity<ApiResponse<?>> getRoutesForDriver() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -111,6 +129,8 @@ public class DriverController {
     }
 
     // UPDATE LOCATION
+    @Operation(summary = "Update driver location",
+            description = "Driver posts periodic location updates. Body: LocationUpdateDto { shuttleId, latitude, longitude, accuracy, heading, speed }")
     @PostMapping("/location")
     public ResponseEntity<ApiResponse<?>> updateLocation(@Valid @RequestBody LocationUpdateDto dto) {
         // validate shuttle exists
@@ -136,6 +156,8 @@ public class DriverController {
     }
 
     // END SESSION
+    @Operation(summary = "End driver session",
+            description = "End an active driver session. Body may include { sessionId } to end a specific session; otherwise ends the active session for the authenticated driver.")
     @PostMapping("/session/end")
     public ResponseEntity<ApiResponse<?>> endSession(@RequestBody EndSessionRequest req) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();

@@ -12,7 +12,7 @@ ws.on('open', () => {
     console.log('Connected!');
 
     const payload = {
-        driverId: "1",
+        shuttleId: 1,           // fixed: use shuttleId (Integer) expected by backend
         latitude: 6.67,
         longitude: -1.57,
         createdAt: new Date().toISOString()

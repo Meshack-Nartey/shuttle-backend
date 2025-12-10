@@ -10,14 +10,23 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
+// OpenAPI
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+
 @RestController
 @RequestMapping("/student/trip")
 @RequiredArgsConstructor
+@Tag(name = "Student Trip", description = "Endpoints for students to match and request trips")
 public class StudentTripController {
 
     private final TripMatchingService tripMatchingService;
     private final RoutingResolverService routingResolverService;
 
+    @Operation(summary = "Match trip by stop IDs or names",
+            description = "pickupStopName & dropoffStopName. Returns matching routes and suggested stops.")
     @PostMapping("/match")
     public ResponseEntity<?> matchTrip(@RequestBody TripMatchRequest req) {
         if (req == null) {

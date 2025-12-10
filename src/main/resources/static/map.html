@@ -1,0 +1,181 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Shuttle Map (Realtime)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Leaflet map styles -->
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+
+    <style>
+        #map { height: 100vh; width: 100%; margin: 0; padding: 0; }
+        #status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 999;
+            background: rgba(255,255,255,0.95);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+
+<div id="status">Waiting for shuttle...</div>
+<div id="map"></div>
+
+<!-- Core libraries -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
+
+<script>
+    // ============================
+    //    READ URL PARAMETERS
+    // ============================
+    const urlParams = new URLSearchParams(window.location.search);
+    const shuttleId = urlParams.get('shuttleId') || 1;
+    const token = urlParams.get('token');   // Bearer <token> (optional)
+
+    // ============================
+    //    INITIALIZE MAP
+    // ============================
+    const map = L.map('map').setView([6.674138, -1.571430], 14);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // ============================
+    //    SHUTTLE ICON
+    // ============================
+    const shuttleIcon = L.icon({
+        iconUrl: '/images/shuttle.png',  // Make sure this file exists
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+    });
+
+    let marker = null;
+    let socket = null;
+    let client = null;
+
+    const statusEl = document.getElementById('status');
+
+    function setStatus(text) {
+        statusEl.textContent = text;
+    }
+
+    // ============================
+    //  SMOOTH MARKER MOVEMENT
+    // ============================
+    function animateMarker(marker, newLatLng) {
+        try {
+            const duration = 300;
+            const start = performance.now();
+            const startPos = marker.getLatLng();
+
+            function frame(time) {
+                const t = Math.min((time - start) / duration, 1);
+                const lat = startPos.lat + (newLatLng.lat - startPos.lat) * t;
+                const lng = startPos.lng + (newLatLng.lng - startPos.lng) * t;
+
+                marker.setLatLng([lat, lng]);
+
+                if (t < 1) requestAnimationFrame(frame);
+            }
+            requestAnimationFrame(frame);
+        } catch {
+            marker.setLatLng([newLatLng.lat, newLatLng.lng]);
+        }
+    }
+
+    // ============================
+    //  DRAW ROUTE POLYLINE (OPTIONAL)
+    // ============================
+    function fetchAndDrawRoute(shuttleId) {
+        fetch(`/api/routes/${shuttleId}`)
+            .then(r => r.ok ? r.json() : Promise.reject(r.status))
+            .then(points => {
+                if (!Array.isArray(points)) return;
+                const latlngs = points.map(p => [p.lat, p.lng]);
+                L.polyline(latlngs, { color: 'blue', weight: 4, opacity: 0.7 }).addTo(map);
+
+                const bounds = L.latLngBounds(latlngs);
+                map.fitBounds(bounds.pad(0.15));
+            })
+            .catch(err => console.warn("Route load failed:", err));
+    }
+
+    // ============================
+    //    STOMP WEBSOCKET CLIENT
+    // ============================
+    function connectRealtime() {
+        setStatus("Connecting...");
+
+        // Correct endpoint (matches your backend)
+        socket = new SockJS('/ws');
+        client = StompJs.Stomp.over(socket);
+
+        client.debug = () => {}; // disable logs
+
+        const connectHeaders = token ? { Authorization: token } : {};
+
+        const topic = `/topic/shuttle/${shuttleId}/location`;
+
+        client.onStompError = frame => {
+            console.error("Broker error:", frame);
+            setStatus("Realtime error");
+        };
+
+        socket.onclose = () => {
+            console.warn("WebSocket closed. Reconnecting...");
+            setStatus("Disconnected — reconnecting...");
+            setTimeout(connectRealtime, 2000);
+        };
+
+        client.connect(connectHeaders, () => {
+            console.log("CONNECTED");
+            setStatus("Connected — waiting for updates...");
+
+            client.subscribe(topic, msg => {
+                if (!msg || !msg.body) return;
+
+                const body = JSON.parse(msg.body);
+                const lat = Number(body.latitude);
+                const lng = Number(body.longitude);
+
+                if (Number.isNaN(lat) || Number.isNaN(lng)) return;
+
+                const pos = { lat, lng };
+
+                // place or update marker
+                if (!marker) {
+                    marker = L.marker([lat, lng], { icon: shuttleIcon }).addTo(map)
+                        .bindPopup(`Shuttle ${body.shuttleId}<br>Updated: ${body.createdAt}`);
+                } else {
+                    animateMarker(marker, pos);
+                    marker.getPopup().setContent(`Shuttle ${body.shuttleId}<br>Updated: ${body.createdAt}`);
+                }
+
+                setStatus(`Last update: ${body.createdAt}`);
+            });
+        }, err => {
+            console.error("STOMP connection error:", err);
+            setStatus("Realtime connection failed");
+        });
+    }
+
+    // ============================
+    //      START EVERYTHING
+    // ============================
+    fetchAndDrawRoute(shuttleId);
+    connectRealtime();
+</script>
+</body>
+</html>

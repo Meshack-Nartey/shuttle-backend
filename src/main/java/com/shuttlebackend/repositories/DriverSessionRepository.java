@@ -4,6 +4,7 @@ import com.shuttlebackend.entities.DriverSession;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -12,8 +13,14 @@ import java.util.Optional;
 public interface DriverSessionRepository extends JpaRepository<DriverSession, Integer> {
 
     @Modifying
-    @Query("UPDATE DriverSession s SET s.endedAt = CURRENT_TIMESTAMP WHERE s.driver.id = :driverId AND s.endedAt IS NULL")
-    void endActiveSessions(Integer driverId);
+    @Transactional
+    @Query("""
+        UPDATE DriverSession s
+        SET s.endedAt = CURRENT_INSTANT
+        WHERE s.driver.id = :driverId
+          AND s.endedAt IS NULL
+    """)
+    void endActiveSessions(@Param("driverId") Integer driverId);
 
     Optional<DriverSession> findByDriverIdAndEndedAtIsNull(Integer driverId);
 
@@ -21,8 +28,7 @@ public interface DriverSessionRepository extends JpaRepository<DriverSession, In
     Optional<DriverSession> findActiveByDriverId(@Param("driverId") Integer driverId);
 
     @Query("SELECT s FROM DriverSession s WHERE s.shuttle.id = :shuttleId AND s.endedAt IS NULL")
-    Optional<DriverSession> findActiveByShuttleId(Integer shuttleId);
+    Optional<DriverSession> findActiveByShuttleId(@Param("shuttleId") Integer shuttleId);
 
-    // new: find active sessions for a route
     List<DriverSession> findByRoute_IdAndEndedAtIsNull(Integer routeId);
 }
