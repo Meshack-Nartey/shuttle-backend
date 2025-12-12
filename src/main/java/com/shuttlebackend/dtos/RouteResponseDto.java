@@ -10,7 +10,7 @@ import java.util.List;
 public class RouteResponseDto {
     private Integer routeId;
     private String routeName;
-    private List<List<Double>> polyline; // array of [lng, lat]
+    private List<List<Double>> polyline;
     private List<StopDto> stops;
 }
 

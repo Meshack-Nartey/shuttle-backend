@@ -10,4 +10,7 @@ public class ShuttleDto {
     private Integer capacity;
     private String status;
     private Integer schoolId;
+    private String externalId;
+    private boolean inUse;
+
 }
