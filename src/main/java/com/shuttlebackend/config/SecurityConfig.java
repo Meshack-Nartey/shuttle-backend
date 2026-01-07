@@ -63,6 +63,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/ws-stomp/**").permitAll()
+                        .requestMatchers("/refresh").permitAll()
                         // Note: /app/** and /topic/** are STOMP destinations, not regular HTTP endpoints.
                         // STOMP auth is handled by channel interceptors.
 

@@ -60,6 +60,11 @@ public class AuthController {
         StudentDto dto = studentMapper.toDto(student);
         return ResponseEntity.status(201).body(new ApiResponse<>(true, dto));
     }
+    @GetMapping("/health")
+    public String health() {
+        return "OK";
+    }
+
 
     // DRIVER SIGNUP
     @Operation(summary = "Driver signup",

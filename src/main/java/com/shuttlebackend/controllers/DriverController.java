@@ -163,7 +163,7 @@ public class DriverController {
     // --------------------------------------------------------------------
     @Operation(summary = "Update driver location",
             description = ("Driver posts periodic location updates.")
-
+    )
     @PostMapping("/location")
     public ResponseEntity<ApiResponse<?>> updateLocation(@Valid @RequestBody LocationUpdateDto dto) {
 
