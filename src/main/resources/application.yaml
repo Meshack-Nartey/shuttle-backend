@@ -4,7 +4,7 @@ spring:
 
   datasource:
     url: jdbc:mysql://localhost:3306/shuttle_backend_new?createDatabaseIfNotExist=true
-    username: root
+    username: asher
     password: 1Science,3
     driver-class-name: com.mysql.cj.jdbc.Driver
 
